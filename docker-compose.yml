@@ -1,0 +1,41 @@
+version: "3.8"
+services:
+  mongo:
+    container_name: mongo
+    image: mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo_data:/data/db
+  cassandra:
+    container_name: cassandra
+    image: cassandra
+    ports:
+      - 9042:9042
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+  neo4j:
+    container_name: neo4j
+    image: neo4j
+    ports:
+      - 7474:7474
+      - 7687:7687
+    volumes:
+      - neo4j_data:/data
+  data_loader:
+    build:
+      context: .
+      dockerfile: DockerFile.yml
+    volumes:
+      - ./data_loader:/app
+    depends_on:
+      - mongo
+      - cassandra
+      - neo4j
+    command: "python /app/app.py && python /app/app2.py"
+volumes:
+  mongo_data:
+  cassandra_data:
+  neo4j_data:
+
+  

@@ -1,7 +1,5 @@
 import requests
 from pymongo import MongoClient
-from cassandra.cluster import Cluster
-from cassandra.auth import PlainTextAuthProvider
 
 # Connect to MongoDB
 client = MongoClient('mongodb://mongo:27017/')
@@ -23,6 +21,8 @@ except Exception as e:
     with open('alert.txt', 'w') as f:
         f.write(f'The code did not run correctly. Error message: {str(e)}')
 
+from cassandra.cluster import Cluster
+from cassandra.auth import PlainTextAuthProvider
 # Connect to Cassandra
 auth_provider = PlainTextAuthProvider(username='cassandra', password='cassandra')
 cassandra_cluster = Cluster(['cassandra'], auth_provider=auth_provider)

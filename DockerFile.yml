@@ -9,8 +9,10 @@ WORKDIR /app
 COPY . /app
 
 # Install any needed packages specified in requirements.txt
-RUN pip install --trusted-host pypi.python.org requests pymongo neo4j
-RUN pip install cassandra-driver
+RUN pip install --trusted-host pypi.python.org neo4j py4j pymongo
+RUN pip install pyspark
+RUN pip install pyspark[sql]
+RUN pip install pyspark[connect]
 
 # Make port 80 available to the world outside this container
 EXPOSE 80

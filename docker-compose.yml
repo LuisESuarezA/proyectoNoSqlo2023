@@ -32,7 +32,6 @@ services:
       - mongo
       - cassandra
       - neo4j
-    command: "python /app/app.py && python /app/app2.py"
 volumes:
   mongo_data:
   cassandra_data:

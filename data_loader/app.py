@@ -21,7 +21,67 @@ except Exception as e:
     with open('alert.txt', 'w') as f:
         f.write(f'The code did not run correctly. Error message: {str(e)}')
 
-from cassandra.cluster import Cluster
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+
+# Connect to Cassandra
+cassandra_host = 'cassandra'
+cassandra_port = '9042'
+cassandra_keyspace = 'world'
+cassandra_table = 'countries'
+
+# Connect to MongoDB
+mongo_uri = 'mongodb://mongo:27017/'
+mongo_database = 'world'
+mongo_collection = 'countries'
+
+# Create SparkSession
+spark = SparkSession.builder.appName('MongoDB to Cassandra ETL').getOrCreate()
+
+# Read data from MongoDB
+mongo_df = spark.read.format('mongo').option('uri', mongo_uri).option('database', mongo_database).option('collection', mongo_collection).load()
+
+# Transform data
+cassandra_df = mongo_df.select(
+    col('_id').cast('string').alias('id'),
+    col('startOfWeek'),
+    col('capitalInfo.latlng')[0].alias('capitalInfo_lat'),
+    col('capitalInfo.latlng')[1].alias('capitalInfo_lng'),
+    col('name.common').alias('name_common'),
+    col('name.official').alias('name_official'),
+    col('name.nativeName.eng.common').alias('name_nativeName'),
+    col('unMember'),
+    col('capital')[0].alias('capital').cast('string'),
+    col('region'),
+    col('subregion'),
+    col('languages.eng').alias('languages'),
+    col('landlocked'),
+    col('borders').cast('string'),
+    col('population'),
+    col('gini.2018').alias('gini'),
+    col('car.signs').cast('string').alias('car_signs'),
+    col('car.side').alias('car_side'),
+    col('timezones').cast('string')
+)
+
+# Write data to Cassandra
+cassandra_df.write.format('org.apache.spark.sql.cassandra').options(
+    **{
+        "table": cassandra_table,
+        "keyspace": cassandra_keyspace,
+        "spark.cassandra.connection.host": cassandra_host,
+        "spark.cassandra.connection.port": cassandra_port,
+    }
+).mode('append').save()
+
+
+# Write to alerta.txt
+try:
+    with open('alerta.txt', 'w') as f:
+        f.write('The code ran correctly.')
+except Exception as e:
+    with open('alerta.txt', 'w') as f:
+        f.write(f'The code did not run correctly. Error message: {str(e)}')
 from cassandra.auth import PlainTextAuthProvider
 # Connect to Cassandra
 auth_provider = PlainTextAuthProvider(username='cassandra', password='cassandra')

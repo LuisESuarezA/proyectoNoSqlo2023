@@ -21,8 +21,7 @@ except Exception as e:
     with open('alert.txt', 'w') as f:
         f.write(f'The code did not run correctly. Error message: {str(e)}')
 
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col
+from cassandra.cluster import Cluster
 
 # Connect to Cassandra
 cassandra_host = 'cassandra'

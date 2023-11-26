@@ -1,5 +1,6 @@
 import requests
 from pymongo import MongoClient
+from py2neo import Graph, Node, NodeMatcher
 
 # Connect to MongoDB
 client = MongoClient('mongodb://mongo:27017/')
@@ -125,3 +126,44 @@ try:
 except Exception as e:
     with open('alerta.txt', 'w') as f:
         f.write(f'The code did not run correctly. Error message: {str(e)}')
+
+
+ # Conectar a Neo4j
+ neo4j_uri = "neo4j://localhost:7687"
+ neo4j_user = "neo4j"
+ neo4j_password = "neo4j"
+ graph = Graph(neo4j_uri, auth=(neo4j_user, neo4j_password))
+ matcher = NodeMatcher(graph)
+
+ # Creación de nodos de países
+ for country in mongo_countries:
+     # Manejar el caso en que 'capital' no exista
+     capital = country['capital'][0] if 'capital' in country and country['capital'] else None
+
+     country_node = Node("Country",
+                         _id=country['_id'],
+                         startOfWeek=country.get("startOfWeek"),
+                         capitalInfo_lat=country['capitalInfo']['latlng'][0],
+                         capitalInfo_lng=country['capitalInfo']['latlng'][1],
+                         name_common=country['name']['common'],
+                         name_official=country["name"]['official'],
+                         name_nativeName=country["name"]['nativeName']['eng']['common'],
+                         unMember=country.get("unMember"),
+                         capital=capital,
+                         region=country.get("region"),
+                         subregion=country.get("subregion"),
+                         languages=country.get("languages"),
+                         landlocked=country.get("landlocked"),
+                         population=country.get("population"),
+                         gini=country.get("gini", {}).get("2018"),
+                         car=country.get("car", {}).get("side"))
+
+     graph.merge(country_node)
+
+ # Write to alerta.txt
+ try:
+     with open('alerta.txt', 'w') as f:
+         f.write('The code ran correctly.')
+ except Exception as e:
+     with open('alerta.txt', 'w') as f:
+         f.write(f'The code did not run correctly. Error message: {str(e)}')

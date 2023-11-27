@@ -15,11 +15,17 @@ services:
     volumes:
       - cassandra_data:/var/lib/cassandra
   neo4j:
+    image: neo4j:latest
     container_name: neo4j
-    image: neo4j
     ports:
-      - 7474:7474
-      - 7687:7687
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/neoneoneo
+      NEO4J_apoc_export_file_enabled: "true"
+      NEO4J_apoc_import_file_enabled: "true"
+      NEO4J_apoc_import_file_use__neo4j__config: "true"
+      NEO4JLABS_PLUGINS: '["apoc"]'
     volumes:
       - neo4j_data:/data
   data_loader:

@@ -22,6 +22,62 @@ except Exception as e:
     with open('alert.txt', 'w') as f:
         f.write(f'The code did not run correctly. Error message: {str(e)}')
 
+# Connect to Neo4j
+neo4j_uri = "neo4j://neo4j:7687"
+neo4j_user = "neo4j"
+neo4j_password = "neoneoneo"
+graph = Graph(neo4j_uri, auth=(neo4j_user, neo4j_password))
+
+def create_country_node(country_data):
+    country_node = Node("Country",
+                        name=country_data['name']['common'],
+                        population=country_data['population'])
+    return country_node
+
+def create_region_node(region_name):
+    region_node = Node("Region", name=region_name)
+    return region_node
+
+def create_subregion_node(subregion_name):
+    subregion_node = Node("Subregion", name=subregion_name)
+    return subregion_node
+
+# Obtener datos de MongoDB
+countries_data = collection.find()
+
+# Transferir datos a Neo4j
+for country_data in countries_data:
+    # Crear nodo de país
+    country_node = create_country_node(country_data)
+    graph.merge(country_node, "Country", "name")
+
+    # Crear nodo de región
+    region_name = country_data.get('region')
+    if region_name:
+        region_node = create_region_node(region_name)
+        graph.merge(region_node, "Region", "name")
+
+        # Relacionar país con región
+        graph.merge((country_node, "IN_REGION", region_node))
+
+    # Crear nodo de subregión
+    subregion_name = country_data.get('subregion')
+    if subregion_name:
+        subregion_node = create_subregion_node(subregion_name)
+        graph.merge(subregion_node, "Subregion", "name")
+
+        # Relacionar país con subregión
+        graph.merge((country_node, "IN_SUBREGION", subregion_node))
+
+# Write to alerta.txt
+try:
+    with open('alerta.txt', 'w') as f:
+        f.write('The code ran correctly.')
+except Exception as e:
+    with open('alerta.txt', 'w') as f:
+        f.write(f'The code did not run correctly. Error message: {str(e)}')
+
+
 from cassandra.cluster import Cluster
 
 # Connect to Cassandra
@@ -128,42 +184,4 @@ except Exception as e:
         f.write(f'The code did not run correctly. Error message: {str(e)}')
 
 
- # Conectar a Neo4j
- neo4j_uri = "neo4j://localhost:7687"
- neo4j_user = "neo4j"
- neo4j_password = "neo4j"
- graph = Graph(neo4j_uri, auth=(neo4j_user, neo4j_password))
- matcher = NodeMatcher(graph)
-
- # Creación de nodos de países
- for country in mongo_countries:
-     # Manejar el caso en que 'capital' no exista
-     capital = country['capital'][0] if 'capital' in country and country['capital'] else None
-
-     country_node = Node("Country",
-                         _id=country['_id'],
-                         startOfWeek=country.get("startOfWeek"),
-                         capitalInfo_lat=country['capitalInfo']['latlng'][0],
-                         capitalInfo_lng=country['capitalInfo']['latlng'][1],
-                         name_common=country['name']['common'],
-                         name_official=country["name"]['official'],
-                         name_nativeName=country["name"]['nativeName']['eng']['common'],
-                         unMember=country.get("unMember"),
-                         capital=capital,
-                         region=country.get("region"),
-                         subregion=country.get("subregion"),
-                         languages=country.get("languages"),
-                         landlocked=country.get("landlocked"),
-                         population=country.get("population"),
-                         gini=country.get("gini", {}).get("2018"),
-                         car=country.get("car", {}).get("side"))
-
-     graph.merge(country_node)
-
- # Write to alerta.txt
- try:
-     with open('alerta.txt', 'w') as f:
-         f.write('The code ran correctly.')
- except Exception as e:
-     with open('alerta.txt', 'w') as f:
-         f.write(f'The code did not run correctly. Error message: {str(e)}')
+ 

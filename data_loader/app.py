@@ -68,6 +68,7 @@ for country_data in countries_data:
 
         # Relacionar país con subregión
         graph.merge((country_node, "IN_SUBREGION", subregion_node))
+        graph.mereg((subregion_node, "PART_OF", region_node))
 
 # Write to alerta.txt
 try:

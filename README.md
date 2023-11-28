@@ -74,11 +74,19 @@ Consulta para obtener las subregiones con la mayor cantidad de idiomas distintos
   LIMIT 5;
 ```
 
-Consulta para encontrar la capital con la mayor población en cada región:
+Consulta para encontrar los países con la mayor población en cada región:
 ```cypher
-  MATCH (r:Region)-[:CONTAINS]->(c:Country)-[:HAS_CAPITAL]->(capital:CapitalInfo)
-  WITH r, capital, MAX(c.population) AS maxPopulation
-  WHERE c.population = maxPopulation
-  RETURN r.name AS Region, capital.name AS Capital, maxPopulation AS Population;
+  MATCH (c:Country)-[:IN_SUBREGION]->(s:Subregion)
+  WITH s, c, max(c.population) AS MaxPopulation
+  ORDER BY MaxPopulation DESC
+  RETURN s.name AS Subregion, c.name AS Country, MaxPopulation AS Population
+```
+Número de paises por región en orden descendente
+```cypher
+  MATCH (c:Country)-[:IN_SUBREGION]->(s:Subregion)
+  WITH s, COUNT(c) AS numberOfCountries
+  RETURN s.name AS Subregion, numberOfCountries AS NumberOfCountries
+  ORDER BY numberOfCountries DESC;
 ```
 ## Queries de Cassandra
+

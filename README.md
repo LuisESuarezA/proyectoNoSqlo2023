@@ -10,18 +10,15 @@ Integrantes:
 
 Por medio de **docker-compose** generamos cuatro contenedores. Los servicios se definen en el archivo `docker-compose.yaml` que se ejecutan en un ambiente aislado. Cuando se creen los contenedores se ejecutará de manera automática el archivo `app.py`. Este archivo hace las conexiones a Mongodb, Neo4j y Cassandra, y llena las bases con los datos.
 
-1. En la terminal ejecuta el siguiente comando. Asegúrate de tener encendido Docker. 
+1. En la terminal ejecuta el siguiente comando. Asegúrate de tener encendido Docker.
 ```shell
-docker-compose up --build -d
+docker-compose down --volumes && docker-compose up
 ```
 No te preocupes si la ejecución no termina, esta seguirá activa mientras haya conexión a los servicios.
 
 2. Para probar las consultas es necesario iniciar cada uno de los servicios.
 
 Para Mongodb ejecutar los siguientes comandos en una nueva terminal:
-  ```shell
-  docker start mongo
-  ```
 
   ```shell
   docker exec -it mongo mongosh
@@ -32,9 +29,6 @@ Para Mongodb ejecutar los siguientes comandos en una nueva terminal:
   ```
   
 Para Neo4j ejecutar los siguientes comandos en una nueva terminal (tambien puedes acceder al link http://localhost:7474):
-  ```shell
-  docker start neo4jdb
-  ```
 
   ```shell
   docker exec -it neo4jdb cypher-shell
@@ -44,42 +38,143 @@ Para Neo4j ejecutar los siguientes comandos en una nueva terminal (tambien puede
 3. Ahora ya puedes copiar y pegar las consultas en cada servicio  
 
 ## Queries de Mongodb
+Obtendremos las subregiones que contienen la mayor cantidad de paises que manejan a la derecha (como ingleses).
+Y después las subregiones que contienen la menor cantidad de paises que manejan a la derecha.
 ```js
+db.countries.aggregate([
+  {
+    $match: {
+      'car.side': 'left'
+    }
+  },
+  {
+    $group: {
+      _id: { subregion: '$subregion', region: '$region' },
+      count: { $sum: 1 }
+    }
+  },
+  {
+    $sort: { count: -1 }
+  },
+  {
+    $limit: 1
+  }
+]);
 
+db.countries.aggregate([
+  {
+    $match: {
+      'car.side': 'left'
+    }
+  },
+  {
+    $group: {
+      _id: { subregion: '$subregion', region: '$region' },
+      count: { $sum: 1 }
+    }
+  },
+  {
+    $sort: { count: 1 }
+  },
+  {
+    $limit: 1
+  }
+]);
 ```
-
+Nos regresa las subregiones ordenadas por cuales hablan la mayor variedad de idiomas distintos. 
+Agregamos otro para ver de los continentes.
 ```js
+db.countries.aggregate([
+  {
+    $unwind: '$languages'
+  },
+  {
+    $group: {
+      _id: '$subregion',
+      total: { $addToSet: '$languages' }
+    }
+  },
+  {
+    $project: {
+      _id: 1,
+      total: { $size: '$total' }
+    }
+  },
+  {
+    $sort: {total: -1}
+  }
+]);
 
+db.countries.aggregate([
+  {
+    $unwind: '$languages'
+  },
+  {
+    $group: {
+      _id: '$region',
+      total: { $addToSet: '$languages' }
+    }
+  },
+  {
+    $project: {
+      _id: 1,
+      total: { $size: '$total' }
+    }
+  },
+  {
+    $sort: {total: -1}
+  }
+]);
 ```
-
+Este último querie es para ver cual es el dia de la semana menos popular para iniciar la semana.
+Fuera de broma, el de verdad es analizar la subregión y región con la mayor cantidad de paises fuera de la ONU.
 ```js
+db.countries.aggregate([
+  {
+    $group: {
+      _id: '$startOfWeek',
+      conteo: { $sum: 1 }
+    }
+  },
+  {
+    $sort: { conteo: 1 }
+  }
+]);
 
+db.countries.aggregate([
+  {
+    $match: {
+      'unMember': false
+    }
+  },
+  {
+    $group: {
+      _id: { subregion: '$subregion', region: '$region' },
+      count: { $sum: 1 }
+    }
+  },
+  {
+    $sort: { count: -1 }
+  }
+]);
 ```
 
 ## Queries de Neo4j
-Consulta para encontrar países que comparten fronteras y tienen un índice de Gini similar:
+Consulta para obtener las regiones con la mayor cantidad de poblacion, y luego de paises:
 ```cypher
-  MATCH (c1:Country)-[:BORDERS]->(c2:Country)
-  WHERE abs(c1.gini - c2.gini) < 5
-  RETURN c1.name AS Country1, c2.name AS Country2, c1.gini AS GiniCountry1, c2.gini AS GiniCountry2;
+  MATCH (c:Country)-[:IN_REGION]->(s:Region)
+  WITH s, COUNT(c) AS numberOfCountries, SUM(c.population) AS totalPopulation
+  RETURN s.name AS Subregion, numberOfCountries AS NumberOfCountries, totalPopulation AS TotalPopulation
+  ORDER BY totalPopulation DESC, numberOfCountries DESC;
 ```
-
-Consulta para obtener las subregiones con la mayor cantidad de idiomas distintos:
-```cypher
-  MATCH (s:Subregion)-[:PART_OF]->(r:Region)-[:CONTAINS]->(c:Country)
-  WITH s, COLLECT(DISTINCT c.languages) AS countryLanguages
-  WITH s, REDUCE(s1 = [], lang IN countryLanguages | s1 + lang) AS allLanguages
-  RETURN s.name AS Subregion, SIZE(allLanguages) AS DistinctLanguagesCount
-  ORDER BY DistinctLanguagesCount DESC
-  LIMIT 5;
-```
-
-Consulta para encontrar los países con la mayor población en cada región:
+Consulta para encontrar los países con la mayor población en cada subregión:
 ```cypher
   MATCH (c:Country)-[:IN_SUBREGION]->(s:Subregion)
   WITH s, c, max(c.population) AS MaxPopulation
   ORDER BY MaxPopulation DESC
-  RETURN s.name AS Subregion, c.name AS Country, MaxPopulation AS Population
+  WITH s, COLLECT({name: c.name, population: MaxPopulation}) AS countries
+  WITH s, countries[0] AS topCountry
+  RETURN s.name AS Subregion, topCountry.name AS Country, topCountry.population AS Population
 ```
 Número de paises por región en orden descendente
 ```cypher

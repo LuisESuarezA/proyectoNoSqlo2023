@@ -25,7 +25,7 @@ except Exception as e:
 
 def add_country(tx, name, population):
     query = (
-        "CREATE (c:Country {name: $name, population: $population}) "
+        "MERGE (c:Country {name: $name, population: $population}) "
     )
     tx.run(query, name=name, population=population)
 

@@ -1,6 +1,7 @@
 import requests
 from pymongo import MongoClient
 from py2neo import Graph, Node, NodeMatcher
+from neo4j import GraphDatabase
 
 # Connect to MongoDB
 client = MongoClient('mongodb://mongo:27017/')
@@ -22,25 +23,30 @@ except Exception as e:
     with open('alert.txt', 'w') as f:
         f.write(f'The code did not run correctly. Error message: {str(e)}')
 
-# Connect to Neo4j
+def add_country(tx, name, population):
+    query = (
+        "CREATE (c:Country {name: $name, population: $population}) "
+    )
+    tx.run(query, name=name, population=population)
+
+def add_region(tx, region_name):
+    query = (
+        "MERGE (r:Region {name: $name}) "
+    )
+    tx.run(query, name=region_name)
+
+def add_subregion(tx, subregion_name):
+    query = (
+        "MERGE (s:Subregion {name: $name}) "
+    )
+    tx.run(query, name=subregion_name)
+
 neo4j_uri = "neo4j://neo4j:7687"
 neo4j_user = "neo4j"
 neo4j_password = "neoneoneo"
-graph = Graph(neo4j_uri, auth=(neo4j_user, neo4j_password))
+driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
+session = driver.session()
 
-def create_country_node(country_data):
-    country_node = Node("Country",
-                        name=country_data['name']['common'],
-                        population=country_data['population'])
-    return country_node
-
-def create_region_node(region_name):
-    region_node = Node("Region", name=region_name)
-    return region_node
-
-def create_subregion_node(subregion_name):
-    subregion_node = Node("Subregion", name=subregion_name)
-    return subregion_node
 
 # Obtener datos de MongoDB
 countries_data = collection.find()
@@ -48,27 +54,32 @@ countries_data = collection.find()
 # Transferir datos a Neo4j
 for country_data in countries_data:
     # Crear nodo de país
-    country_node = create_country_node(country_data)
-    graph.merge(country_node, "Country", "name")
+    country_name = country_data.get('name').get('common')
+    population = country_data.get('population')
+    session.execute_write(add_country, name=country_name, population=population)
 
     # Crear nodo de región
     region_name = country_data.get('region')
     if region_name:
-        region_node = create_region_node(region_name)
-        graph.merge(region_node, "Region", "name")
+        session.execute_write(add_region, region_name)
 
         # Relacionar país con región
-        graph.merge((country_node, "IN_REGION", region_node))
+        session.run("MATCH (c:Country {name: $country_name}), (r:Region {name: $region_name}) "
+                    "MERGE (c)-[:IN_REGION]->(r)",
+                    country_name=country_name, region_name=region_name)
 
     # Crear nodo de subregión
     subregion_name = country_data.get('subregion')
     if subregion_name:
-        subregion_node = create_subregion_node(subregion_name)
-        graph.merge(subregion_node, "Subregion", "name")
+        add_subregion(session, subregion_name)
 
         # Relacionar país con subregión
-        graph.merge((country_node, "IN_SUBREGION", subregion_node))
-        graph.mereg((subregion_node, "PART_OF", region_node))
+        session.run("MATCH (c:Country {name: $country_name}), (s:Subregion {name: $subregion_name}) "
+                    "MERGE (c)-[:IN_SUBREGION]->(s)",
+                    country_name=country_name, subregion_name=subregion_name)
+        session.run("MATCH (s:Subregion {name: $subregion_name}), (r:Region {name: $region_name}) "
+                    "MERGE (s)-[:PART_OF]->(r)",
+                    subregion_name=subregion_name, region_name=region_name)
 
 # Write to alerta.txt
 try:

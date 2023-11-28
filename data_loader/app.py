@@ -44,7 +44,7 @@ def add_subregion(tx, subregion_name):
 neo4j_uri = "neo4j://neo4j:7687"
 neo4j_user = "neo4j"
 neo4j_password = "neoneoneo"
-driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
+driver = GraphDatabase.driver(neo4j_uri, auth= (neo4j_user, neo4j_password))
 session = driver.session()
 
 

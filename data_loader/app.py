@@ -3,44 +3,41 @@ from pymongo import MongoClient
 from py2neo import Graph, Node, NodeMatcher
 from neo4j import GraphDatabase
 
-# Connect to MongoDB
+# Nos conectamos a MongoDB
 client = MongoClient('mongodb://mongo:27017/')
 db = client['world']
 collection = db['countries']
 
-# Make request to REST Countries API
+# hacemos nuestro reques al API
 response = requests.get('https://restcountries.com/v3.1/all?fields=name,languages,gini,borders,timezones,unMember,capital,region,subregion,car,population,startOfWeek,capitalInfo,landlocked')
 countries = response.json()
 
-# Insert country data into MongoDB
+# Insertamos los datos en MongoDB
 for country in countries:
     collection.insert_one(country)
 
-try:
-    with open('alert.txt', 'w') as f:
-        f.write('The code ran correctly.')
-except Exception as e:
-    with open('alert.txt', 'w') as f:
-        f.write(f'The code did not run correctly. Error message: {str(e)}')
-
+# Creamos una función para crear nodos de países
 def add_country(tx, name, population):
     query = (
         "MERGE (c:Country {name: $name, population: $population}) "
     )
     tx.run(query, name=name, population=population)
 
+# Creamos una función para crear nodos de regiones
 def add_region(tx, region_name):
     query = (
         "MERGE (r:Region {name: $name}) "
     )
     tx.run(query, name=region_name)
 
+# Creamos una función para crear nodos de subregiones
 def add_subregion(tx, subregion_name):
     query = (
         "MERGE (s:Subregion {name: $name}) "
     )
     tx.run(query, name=subregion_name)
 
+# Conectamos a Neo4j
 neo4j_uri = "neo4j://neo4j:7687"
 neo4j_user = "neo4j"
 neo4j_password = "neoneoneo"
@@ -48,7 +45,7 @@ driver = GraphDatabase.driver(neo4j_uri, auth= (neo4j_user, neo4j_password))
 session = driver.session()
 
 
-# Obtener datos de MongoDB
+# Obtenemos los datos datos de nuestro MongoDB
 countries_data = collection.find()
 
 # Transferir datos a Neo4j
@@ -80,14 +77,6 @@ for country_data in countries_data:
         session.run("MATCH (s:Subregion {name: $subregion_name}), (r:Region {name: $region_name}) "
                     "MERGE (s)-[:PART_OF]->(r)",
                     subregion_name=subregion_name, region_name=region_name)
-
-# Write to alerta.txt
-try:
-    with open('alerta.txt', 'w') as f:
-        f.write('The code ran correctly.')
-except Exception as e:
-    with open('alerta.txt', 'w') as f:
-        f.write(f'The code did not run correctly. Error message: {str(e)}')
 
 
 from cassandra.cluster import Cluster

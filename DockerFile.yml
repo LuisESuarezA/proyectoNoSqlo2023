@@ -1,21 +1,15 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9
+# Usamos un python 3.10 como base
+FROM python:3.10
 
-# Set the working directory to /app
+# Nuestro directorio de trabajo dentro del contenedor
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
+# Copia el contenido del directorio actual en el directorio de trabajo del contenedor
 COPY . /app
 
-# Install any needed packages specified in requirements.txt
+# Instala los paquetes de python que se encuentran en el archivo requirements.txt
 COPY requirements.txt .
 RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
-# Make port 80 available to the world outside this container
-EXPOSE 80
-
-# Define environment variable
-ENV NAME World
-
-# Run app.py when the container launches
-CMD ["sh", "-c", "sleep 180 && python3 app.py"]
+# Corre el app.py cuando se inicie el contenedor y pasen 75 segundos para que se preparen las bases de datos
+CMD ["sh", "-c", "sleep 75 && python3 app.py"]

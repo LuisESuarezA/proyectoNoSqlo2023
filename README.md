@@ -1,5 +1,6 @@
 # proyectoNoSqlo2023
 A partir de la API de REST Countries hacemos una conexión a través de python con una base de datos MongoDB. Posteriormente, hacemos un ETL que cargue la base de datos procesada una base de datos estilo grafo (Neo4j). Por último, cargamos la base de datos a Cassandra y hacemos 3 consultas para cada base. 
+Podemos encontrar en la liga: https://www.canva.com/design/DAF1fRZ9fH0/N1jJ_yhrxhgXLYw2uqXdqw/edit?utm_content=DAF1fRZ9fH0&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
 
 Integrantes:
 - Karen Arteaga Mendoza
@@ -29,7 +30,7 @@ Para Mongodb ejecutar los siguientes comandos en una nueva terminal:
   ```
   
 Para Neo4j ejecutar los siguientes comandos en una nueva terminal (tambien puedes acceder al link http://localhost:7474):
-
+Si se ejecuta desde el navegador se usa el usuario ne4j con la contraseña neoneoneo.
   ```shell
   docker exec -it neo4jdb cypher-shell
   ```
@@ -216,4 +217,3 @@ Países que tienen una capital con más de 6 letras y están en una región de �
 ```cql
 SELECT * FROM countries WHERE region = 'Africa' AND landlocked = True ALLOW FILTERING
 ```
-

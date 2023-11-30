@@ -2,6 +2,8 @@ import requests
 from pymongo import MongoClient
 from py2neo import Graph, Node, NodeMatcher
 from neo4j import GraphDatabase
+import pandas as pd
+from cassandra.cluster import Cluster
 
 # Nos conectamos a MongoDB
 client = MongoClient('mongodb://mongo:27017/')
@@ -79,9 +81,6 @@ for country_data in countries_data:
                     subregion_name=subregion_name, region_name=region_name)
 
 
-import requests
-import pandas as pd
-
 # Realizar la solicitud a la API
 url = 'https://restcountries.com/v3.1/all?fields=name,languages,gini,borders,timezones,unMember,capital,region,subregion,car,population,startOfWeek,capitalInfo,landlocked'
 response = requests.get(url)
@@ -102,20 +101,19 @@ else:
     print("Error al obtener los datos de la API.")
 
 
-from cassandra.cluster import Cluster
-
 # Crear una conexión con el clúster de Cassandra
-cluster = Cluster()
+KEYSPACE = "world"
+cluster = Cluster(['localhost'])
 session = cluster.connect()
 
 # Crear un keyspace si no existe
 session.execute("""
-    CREATE KEYSPACE IF NOT EXISTS nombre_keyspace 
+    CREATE KEYSPACE IF NOT EXISTS %s 
     WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 }
-""")
+""" % KEYSPACE)
 
 # Usar el keyspace
-session.set_keyspace('nombre_keyspace')
+session.set_keyspace(KEYSPACE)
 
 # Cargar el archivo CSV en un DataFrame
 df_countries = pd.read_csv('countries_data.csv')

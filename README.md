@@ -41,8 +41,8 @@ Si se ejecuta desde el navegador se usa el usuario neo4j con la contraseña neon
 ## Queries de Mongodb
 En el caso de Mongo vamos a aprovechar su flexibilidad para hacer queries que nos dejen explotar la estructura de diccionarios anidados y de listas que pueden tener los datos en la base. Mongo es perfecto para explorar este tipo de estructuras con diccionarios y listas.
 
-Obtendremos las subregiones que contienen la mayor cantidad de paises que manejan a la derecha (como ingleses).
-Y después las subregiones que contienen la menor cantidad de paises que manejan a la derecha.
+Con esta consulta se obtienen las subregiones donde hay más países en los que se maneja a la derecha (como ingleses).
+Además, agregamos otra consulta para las subregiones.
 ```js
 db.countries.aggregate([
   {
@@ -84,8 +84,8 @@ db.countries.aggregate([
   }
 ]);
 ```
-Nos regresa las subregiones ordenadas por cuales hablan la mayor variedad de idiomas distintos. 
-Agregamos otro para ver de los continentes.
+Esta consulta nos regresa las subregiones ordenadas por cuales hablan la mayor variedad de idiomas distintos. 
+Además,agregamos otra consulta similar para obtener los mismos resultados para los continentes.
 ```js
 db.countries.aggregate([
   {
@@ -129,8 +129,8 @@ db.countries.aggregate([
   }
 ]);
 ```
-Este último querie es para ver cual es el dia de la semana menos popular para iniciar la semana.
-Fuera de broma, el de verdad es analizar la subregión y región con la mayor cantidad de paises fuera de la ONU.
+Este último query es para ver cuál es el día de la semana menos popular para iniciar la semana.
+Fuera de broma, el de verdad es analizar la subregión y región con la mayor cantidad de países fuera de la ONU.
 ```js
 db.countries.aggregate([
   {
@@ -163,9 +163,9 @@ db.countries.aggregate([
 ```
 
 ## Queries de Neo4j
-Usamos Neo4j para obtener resultados sobre nodos que tienen una relación. En este caso en especifico usamos el codigo para trabajar en las relaciones entre los paises, continentes y subregiones del continente. De esta forma conseguimos queries que nos dirigen al analisis de relaciones entre nodos.
+Usamos Neo4j para obtener resultados sobre nodos que tienen una relación. En este caso en específico usamos el código para trabajar en las relaciones entre los países, continentes y subregiones del continente. De esta forma conseguimos queries que nos dirigen al análisis de relaciones entre nodos.
 
-Consulta para obtener las regiones con la mayor cantidad de poblacion, y luego de paises:
+Consulta para obtener las regiones con la mayor cantidad de poblacion y de países, en orden descendente:
 ```cypher
   MATCH (c:Country)-[:IN_REGION]->(s:Region)
   WITH s, COUNT(c) AS numberOfCountries, SUM(c.population) AS totalPopulation
@@ -181,7 +181,7 @@ Consulta para encontrar los países con la mayor población en cada subregión:
   WITH s, countries[0] AS topCountry
   RETURN s.name AS Subregion, topCountry.name AS Country, topCountry.population AS Population
 ```
-Número de paises por región en orden descendente
+Número de países por región en orden descendente
 ```cypher
   MATCH (c:Country)-[:IN_SUBREGION]->(s:Subregion)
   WITH s, COUNT(c) AS numberOfCountries
@@ -198,22 +198,19 @@ Ahora usamos nuestro keyspace
 ```cql
   use world
 ```
-En los queries de Cassandra realizaremos queries que usen la función de filtros de cql sobre columnas especificas para generar queries que indagan más sobre columnas en especifico. Es importante deonotar que se usaron metodos de filtrado en la parte del codigo de python para obtener los mejores resultados, en este caso estamos obteniendo las columnas donde aplicaremos nuestros filtros.
+En los queries de Cassandra realizaremos queries que usen la función de filtros de cql sobre columnas específicas para generar queries que indagan más sobre columnas en específico. Es importante denotar que se usaron metodos de filtrado en la parte del código de python para obtener los mejores resultados. En este caso, obtendremos las columnas donde aplicamos nuestros filtros.
 
 Países en África con poblaciones superiores a 50 millones
-
 ```cql
 SELECT * FROM countries WHERE region = 'Africa' AND population > 50000000 ALLOW FILTERING
 ```
 
 Países en Asia que tienen fronteras con más de cinco países
-
 ```cql
 SELECT * FROM countries WHERE region = 'Asia' ALLOW FILTERING
 ```
 
 Países que tienen una capital con más de 6 letras y están en una región de África sin litoral
-
 ```cql
 SELECT * FROM countries WHERE region = 'Africa' AND landlocked = True ALLOW FILTERING
 ```

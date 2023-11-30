@@ -214,3 +214,7 @@ Países que tienen una capital con más de 6 letras y están en una región de �
 ```cql
 SELECT * FROM countries WHERE region = 'Africa' AND landlocked = True ALLOW FILTERING
 ```
+
+## Resultados
+
+Los resultados de las consultas se pueden consultar en la [Presentación del proyecto](https://github.com/LuisESuarezA/proyectoNoSqlo2023/blob/master/Presentacion.pdf)

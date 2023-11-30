@@ -3,8 +3,8 @@ A partir de la API de REST Countries hacemos una conexión a través de python c
 
 Integrantes:
 - Karen Arteaga Mendoza
-- Luis E. Suarez
-- Sebastián
+- Luis Eduardo Suarez Arroyo
+- Sebastián Cordoba
 
 ## Instrucciones para la insatalación de contenedores y carga de datos
 
@@ -12,7 +12,7 @@ Por medio de **docker-compose** generamos cuatro contenedores. Los servicios se 
 
 1. En la terminal ejecuta el siguiente comando. Asegúrate de tener encendido Docker.
 ```shell
-docker-compose down --volumes && docker-compose up
+docker-compose down --volumes && docker-compose up --build -d
 ```
 No te preocupes si la ejecución no termina, esta seguirá activa mientras haya conexión a los servicios.
 
@@ -38,6 +38,8 @@ Para Neo4j ejecutar los siguientes comandos en una nueva terminal (tambien puede
 3. Ahora ya puedes copiar y pegar las consultas en cada servicio  
 
 ## Queries de Mongodb
+En el caso de Mongo vamos a aprovechar su flexibilidad para hacer queries que nos dejen explotar la estructura de diccionarios anidados y de listas que pueden tener los datos en la base. Mongo es perfecto para explorar este tipo de estructuras con diccionarios y listas.
+
 Obtendremos las subregiones que contienen la mayor cantidad de paises que manejan a la derecha (como ingleses).
 Y después las subregiones que contienen la menor cantidad de paises que manejan a la derecha.
 ```js
@@ -160,6 +162,8 @@ db.countries.aggregate([
 ```
 
 ## Queries de Neo4j
+Usamos Neo4j para obtener resultados sobre nodos que tienen una relación. En este caso en especifico usamos el codigo para trabajar en las relaciones entre los paises, continentes y subregiones del continente. De esta forma conseguimos queries que nos dirigen al analisis de relaciones entre nodos.
+
 Consulta para obtener las regiones con la mayor cantidad de poblacion, y luego de paises:
 ```cypher
   MATCH (c:Country)-[:IN_REGION]->(s:Region)
@@ -184,4 +188,32 @@ Número de paises por región en orden descendente
   ORDER BY numberOfCountries DESC;
 ```
 ## Queries de Cassandra
+
+Primero debemos iniciar Cassandra con 
+```shell
+  docker exec -it cassandra cqlsh
+```
+Ahora usamos nuestro keyspace
+```cql
+  use world
+```
+En los queries de Cassandra realizaremos queries que usen la función de filtros de cql sobre columnas especificas para generar queries que indagan más sobre columnas en especifico. Es importante deonotar que se usaron metodos de filtrado en la parte del codigo de python para obtener los mejores resultados, en este caso estamos obteniendo las columnas donde aplicaremos nuestros filtros.
+
+Países en África con poblaciones superiores a 50 millones
+
+```cql
+SELECT * FROM countries WHERE region = 'Africa' AND population > 50000000 ALLOW FILTERING
+```
+
+Países en Asia que tienen fronteras con más de cinco países
+
+```cql
+SELECT * FROM countries WHERE region = 'Asia' ALLOW FILTERING
+```
+
+Países que tienen una capital con más de 6 letras y están en una región de África sin litoral
+
+```cql
+SELECT * FROM countries WHERE region = 'Africa' AND landlocked = True ALLOW FILTERING
+```
 

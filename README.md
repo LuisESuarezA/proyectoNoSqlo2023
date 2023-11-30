@@ -30,7 +30,7 @@ Para Mongodb ejecutar los siguientes comandos en una nueva terminal:
   ```
   
 Para Neo4j ejecutar los siguientes comandos en una nueva terminal (tambien puedes acceder al link http://localhost:7474):
-Si se ejecuta desde el navegador se usa el usuario ne4j con la contraseña neoneoneo.
+Si se ejecuta desde el navegador se usa el usuario neo4j con la contraseña neoneoneo.
   ```shell
   docker exec -it neo4jdb cypher-shell
   ```

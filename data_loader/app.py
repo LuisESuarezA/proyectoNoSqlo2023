@@ -103,7 +103,8 @@ else:
 
 # Crear una conexión con el clúster de Cassandra
 KEYSPACE = "world"
-cluster = Cluster(['localhost'])
+contact_points = ['cassandra']
+cluster = Cluster(contact_points,port=9042)
 session = cluster.connect()
 
 # Crear un keyspace si no existe

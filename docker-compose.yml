@@ -9,6 +9,8 @@ services:
       - 27017:27017
     volumes:
       - mongo_data:/data/db
+    networks:
+      - mynetwork
 
   cassandra:
     container_name: cassandra
@@ -17,6 +19,8 @@ services:
       - 9042:9042
     volumes:
       - cassandra_data:/var/lib/cassandra
+    networks:
+      - mynetwork
 
   neo4j:
     image: neo4j:latest
@@ -32,6 +36,8 @@ services:
       NEO4JLABS_PLUGINS: '["apoc"]'
     volumes:
       - neo4j_data:/data
+    networks:
+      - mynetwork
 
   data_loader:
     build:
@@ -44,6 +50,12 @@ services:
       - mongo
       - cassandra
       - neo4j
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge
 
 volumes:
   mongo_data:
